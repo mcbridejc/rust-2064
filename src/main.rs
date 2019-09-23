@@ -1,13 +1,24 @@
 mod tests;
 pub mod gameplay;
 pub mod simulate;
+mod interactive;
+mod algorithm;
 
 
 extern crate clap;
 use clap::{App, Arg};
 
-mod interactive;
-mod algorithm;
+use serde_yaml;
+
+
+use std::fs::write;
+use std::collections::BTreeMap;
+
+
+struct AlgoEntry {
+    name: String,
+    func: fn(&gameplay::Board) -> gameplay::MoveDir,
+}
 
 fn main() {
     let matches = App::new("2064")
@@ -23,12 +34,25 @@ fn main() {
         interactive::run();
     } else {
         
-        
-        //let results = simulate::bulk(algorithm::random_3dir, 1000);
-        let results = simulate::bulk(algorithm::random, 1000);
-        
-        println!("Results: ");
-        println!("cdf x: {:?}", results.score_cdf_x);
-        println!("cdf y: {:?}", results.score_cdf_y);
+        const NRUNS: i32 = 3000;
+        let mut report = BTreeMap::new();
+
+        let tests = vec![
+            AlgoEntry{name: "random".to_string(), func: algorithm::random}, 
+            AlgoEntry{name: "random_3dir".to_string(), func: algorithm::random_3dir},
+            AlgoEntry{name: "max_free_space".to_string(), func: algorithm::max_free_space},
+            AlgoEntry{name: "max_free_space_3dir".to_string(), func: algorithm::max_free_space_3dir},
+        ];
+
+        for t in tests {
+            println!("Running {}...", t.name);
+            let results = simulate::bulk(t.func, NRUNS);
+            report.insert(t.name, results);
+        }
+
+        println!("Done. Writing report");
+
+        let s = serde_yaml::to_string(&report).unwrap();
+        write("report.yml", s).unwrap();
     }
 }

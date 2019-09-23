@@ -20,6 +20,7 @@ pub struct Board {
 }
 
 impl Board {
+
     pub fn row(&self, n: i32, reverse: bool) -> [i32; 4] {
         let mut r: [i32; 4] = [0, 0, 0, 0];
         for i in 0..4 {
@@ -70,14 +71,32 @@ impl Board {
     }
     
     pub fn blank() -> Board {
-        let b = Board{ values: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], score: 0};
-        b
+        Board{ values: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], score: 0}
     }
 
     pub fn init() -> Board {
         // TODO: Generate starting cell randomly
-        let b = Board{ values: [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], score: 0};
-        b
+        Board{ values: [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], score: 0}
+    }
+
+    // Faster way to test if a move is valid than to fully execute the move
+    pub fn is_valid_move(&self, dir: MoveDir) -> bool {
+        // We just need to find one non-zero cell that will merge into a cell,
+        // i.e. has a next cell that is 0 or of the same value
+        for i in 0..4 {
+            let row = match dir {
+                MoveDir::Up => self.col(i, true),
+                MoveDir::Down => self.col(i, false),
+                MoveDir::Left => self.row(i, true),
+                MoveDir::Right => self.row(i, false),
+            };
+            for j in 0..3 {
+                if row[i as usize] != 0 && row[j as usize] == 0 || row[j as usize] == row[i as usize] {
+                    return true;
+                }
+            }
+        }
+        false
     }
 
     pub fn stuck(&self) -> bool {
@@ -89,16 +108,16 @@ impl Board {
                 return false;
             }
         }
-        if !play(&self, MoveDir::Up).is_err() {
+        if play(&self, MoveDir::Up).is_ok() {
             return false;
         }
-        if !play(&self, MoveDir::Down).is_err() {
+        if play(&self, MoveDir::Down).is_ok() {
             return false;
         }
-        if !play(&self, MoveDir::Left).is_err() {
+        if play(&self, MoveDir::Left).is_ok() {
             return false;
         }
-        if !play(&self, MoveDir::Right).is_err() {
+        if play(&self, MoveDir::Right).is_ok() {
             return false;
         }
         true
@@ -108,7 +127,7 @@ impl Board {
 // Defines row/column reduction rules. It assumes movement is "right", i.e. from 
 // index 0 towards index 3.
 pub fn reduce_row(row: [i32; 4]) -> ([i32; 4], i32) {
-    let mut row = row.clone();
+    let mut row = row;
     // First, shift right as needed until there are no empty (value = 0) 
     // cells to the right of non-empty ones
     let mut i = 1;
@@ -118,7 +137,7 @@ pub fn reduce_row(row: [i32; 4]) -> ([i32; 4], i32) {
             i += 1; 
             continue;
         }
-        for j in (1..i+1).rev() {
+        for j in (1..=i).rev() {
             row[j] = row[j-1];
         }
         row[0] = 0;
@@ -145,7 +164,7 @@ pub fn reduce_row(row: [i32; 4]) -> ([i32; 4], i32) {
 const P_DRAW2: f32 = 0.8;
 
 pub fn play(b: &Board, dir: MoveDir) -> Result<Board, String> {
-    let mut new = Board{ values: b.values.clone(), score: b.score };
+    let mut new = Board{ values: b.values, score: b.score };
 
     // Approach #1: define set/get functions
     //

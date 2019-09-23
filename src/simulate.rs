@@ -1,5 +1,8 @@
 use super::gameplay::*;
-use super::algorithm;
+
+
+use serde::{Serialize, Deserialize};
+
 
 #[derive(Debug)]
 pub struct SingleRunResult {
@@ -8,6 +11,7 @@ pub struct SingleRunResult {
     pub largest: i32
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct BulkRunResult {
     pub avg_moves: i32,
     pub avg_score: i32,
@@ -85,6 +89,6 @@ pub fn bulk(algo: fn(&Board) -> MoveDir, n: i32) -> BulkRunResult {
         avg_score: 0,
         score_cdf_x: cdf_x_values,
         score_cdf_y: cdf_y_values,
-        largest_hist: largest_hist
+        largest_hist
     }
 }
