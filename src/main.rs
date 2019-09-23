@@ -1,10 +1,13 @@
 mod tests;
 pub mod gameplay;
+pub mod simulate;
+
 
 extern crate clap;
 use clap::{App, Arg};
 
 mod interactive;
+mod algorithm;
 
 fn main() {
     let matches = App::new("2064")
@@ -19,6 +22,13 @@ fn main() {
         println!("Running interactive");
         interactive::run();
     } else {
-        println!("Unsupported options");
+        
+        
+        //let results = simulate::bulk(algorithm::random_3dir, 1000);
+        let results = simulate::bulk(algorithm::random, 1000);
+        
+        println!("Results: ");
+        println!("cdf x: {:?}", results.score_cdf_x);
+        println!("cdf y: {:?}", results.score_cdf_y);
     }
 }
