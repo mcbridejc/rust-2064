@@ -94,3 +94,92 @@ pub fn max_free_space(board: &Board) -> MoveDir {
     selected
 }
 
+
+#[derive(Clone)]
+struct EvaluationNode {
+    dir: Option<MoveDir>,
+    board: Board,
+    rank: i32,
+}
+
+fn score_free_space(board: &Board) -> i32 {
+    let mut count = 0;
+    for v in &board.values {
+        if *v == 0 {
+            count += 1;
+        }
+    }
+    count
+}
+
+fn score_free_space_sortedness(board: &Board) -> i32 {
+    let fs_score = score_free_space(&board);
+
+    // We want a function that rewards having more bigger blocks on one edge of 
+    // the board, and also having htem sorted by size along that edge, basically.
+    // It should be rotation invariant; we don't care which edge we are stacking
+    // on. 
+    let mut scores: Vec<i32> = Vec::new();
+    for dir in &[MoveDir::Up, MoveDir::Down, MoveDir::Left, MoveDir::Right] {
+        for i in 0..4 {
+            let row = board.directional_row(i, *dir);
+            let mut s = 0;
+            for j in 0..3 {
+                if row[j] == 0 {
+                    continue;
+                }
+                if row[j+1] >= row[j] {
+                    s += 1;
+                } else {
+                    s -= 1;
+                }
+            }
+            scores.push(s);
+        }
+    }
+    return fs_score + scores.iter().max().unwrap();
+}
+
+fn expand_scenarios(input_set: &Vec<EvaluationNode>, score_fn: fn(&Board) -> i32)  -> Vec<EvaluationNode> {
+
+    let mut out: Vec<EvaluationNode> = Vec::new();
+
+    let options = vec![MoveDir::Up, MoveDir::Down, MoveDir::Left, MoveDir::Right];
+
+    for start in input_set {
+        for dir in &options {
+            if let Ok(new_board) = play(&start.board, *dir) {
+                let rank = score_fn(&new_board);
+                out.push(EvaluationNode{ dir: Some(start.dir.unwrap_or(*dir)), board: new_board, rank});
+            }
+        }
+    }
+    out
+}
+
+pub enum ScoreFunction {
+    FreeSpace,
+    FreeSpaceWithSortedness
+}
+
+pub fn naive_lookahead(board: &Board, moves: i32, score_fn: ScoreFunction) -> MoveDir {
+    // "Naive" because it would be better, probably, to do a full minimax with all
+    // of the possible random new tiles at each turn. 
+
+    let score_fn = match score_fn {
+        ScoreFunction::FreeSpace => score_free_space,
+        ScoreFunction::FreeSpaceWithSortedness => score_free_space_sortedness,
+    };
+
+    let mut nodes = vec![EvaluationNode{dir: None, board: board.clone(), rank: 0}];
+    for _ in 0..moves {
+        let new_nodes = expand_scenarios(&nodes, score_fn);
+        if new_nodes.len() == 0 {
+            break;
+        }
+        nodes = new_nodes;
+    }
+
+    let best_node = nodes.iter().max_by_key(|x| x.rank);
+    best_node.unwrap().dir.unwrap()
+}

@@ -88,7 +88,7 @@ pub fn run() {
         draw_botline(&mut easy);
 
         for r in 0..4 {
-            let row = board.row(r, false);
+            let row = board.row(r as usize, false);
             for c in 0..4 {
                 easy.move_rc(
                     r * CELL_HEIGHT + CELL_HEIGHT / 2,

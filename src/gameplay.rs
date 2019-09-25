@@ -13,7 +13,7 @@ pub enum MoveDir {
 
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Board {
     pub values: [i32; 16],
     pub score: i32
@@ -21,7 +21,7 @@ pub struct Board {
 
 impl Board {
 
-    pub fn row(&self, n: i32, reverse: bool) -> [i32; 4] {
+    pub fn row(&self, n: usize, reverse: bool) -> [i32; 4] {
         let mut r: [i32; 4] = [0, 0, 0, 0];
         for i in 0..4 {
             let src = if reverse {
@@ -34,7 +34,7 @@ impl Board {
         r
     }
 
-    pub fn col(&self, n: i32, reverse: bool) -> [i32; 4] {
+    pub fn col(&self, n: usize, reverse: bool) -> [i32; 4] {
         let mut r: [i32; 4] = [0, 0, 0, 0];
 
         for i in 0..4 {
@@ -48,7 +48,7 @@ impl Board {
         r
     }
 
-    pub fn set_row(&mut self, n: i32, value: [i32; 4], reverse: bool) {
+    pub fn set_row(&mut self, n: usize, value: [i32; 4], reverse: bool) {
         for i in 0..4 {
             let dst = if reverse {
                 n*4 + 3 - i
@@ -59,7 +59,7 @@ impl Board {
         }
     }
 
-    pub fn set_col(&mut self, n: i32, value: [i32; 4], reverse: bool) {
+    pub fn set_col(&mut self, n: usize, value: [i32; 4], reverse: bool) {
         for i in 0..4 {
             let dst = if reverse {
                 n + (3 - i) * 4
@@ -83,7 +83,7 @@ impl Board {
     pub fn is_valid_move(&self, dir: MoveDir) -> bool {
         // We just need to find one non-zero cell that will merge into a cell,
         // i.e. has a next cell that is 0 or of the same value
-        for i in 0..4 {
+        for i in 0..4usize {
             let row = match dir {
                 MoveDir::Up => self.col(i, true),
                 MoveDir::Down => self.col(i, false),
@@ -121,7 +121,33 @@ impl Board {
             return false;
         }
         true
-    } 
+    }
+
+    // We frequently encounter the problem of wanting to look at the board
+    // from a particular frame of reference, e.g. when making a computing a 
+    // new board based on up,down,left,right move, or when evaluating the fitness
+    // of a board. This will return a copy of a row (for Left, Right), or a 
+    // column (up, down) ordered according to direction given. 
+    // For example, for directional_iter(0, MoveDir::Up), you will be 
+    // returned column 0 of the board, reversed so that row 3 is in the 
+    // first location of the returned array. 
+    // This returns a copy of the row as an array instead of an iterator
+    // because I'm assuming copying the 4 words will be faster, but I haven't
+    // tried it.
+    pub fn directional_row(&self, n: usize, dir: MoveDir) -> [i32; 4] {
+        let (reverse, row) = match dir {
+            MoveDir::Up => (true, false),
+            MoveDir::Down => (false, false),
+            MoveDir::Left => (true, true),
+            MoveDir::Right => (false, true)
+        };
+
+        if row {
+            return self.row(n, reverse);
+        } else {
+            return self.col(n, reverse);
+        }
+    }
 }
 
 // Defines row/column reduction rules. It assumes movement is "right", i.e. from 
@@ -163,24 +189,10 @@ pub fn reduce_row(row: [i32; 4]) -> ([i32; 4], i32) {
 // Defines the likelihood of drawing a 2. Alternative is drawing a 4. 
 const P_DRAW2: f32 = 0.8;
 
+
+
 pub fn play(b: &Board, dir: MoveDir) -> Result<Board, String> {
     let mut new = Board{ values: b.values, score: b.score };
-
-    // Approach #1: define set/get functions
-    //
-    // The problem here is apparently that closures are always different types and 
-    // so I need to do something else her...maybe boxing? 
-    // Could come back
-    // let (getter, setter) = match dir {
-    //     Up => Box::new((|n| { new.col(n, true) }, |n, x| { new.set_col(n, x, true) } )),
-    //     Down => Box::new((|n| { new.col(n, false) }, |n, x| { new.set_col(n, x, false) } )),
-    //     Left => Box::new((|n| { new.row(n, true) }, |n, x| { new.set_row(n, x, true) } )),
-    //     Right => Box::new((|n| { new.row(n, false) }, |n, x| { new.set_row(n, x, false) } ))
-    // };
-    
-    // for i in 0..4 {
-    //     setter(i, reduce_row(getter(i)));
-    // }
 
     // Approach #2: fine
     let (reverse, row) = match dir {

@@ -34,7 +34,7 @@ fn main() {
         interactive::run();
     } else {
         
-        const NRUNS: i32 = 3000;
+        const NRUNS: i32 = 1000;
         let mut report = BTreeMap::new();
 
         let tests = vec![
@@ -42,6 +42,10 @@ fn main() {
             AlgoEntry{name: "random_3dir".to_string(), func: algorithm::random_3dir},
             AlgoEntry{name: "max_free_space".to_string(), func: algorithm::max_free_space},
             AlgoEntry{name: "max_free_space_3dir".to_string(), func: algorithm::max_free_space_3dir},
+            AlgoEntry{name: "naive_lookahead3".to_string(), func: |board| algorithm::naive_lookahead(board, 3, algorithm::ScoreFunction::FreeSpace)},
+            AlgoEntry{name: "naive_lookaheadsorted3".to_string(), func: |board| algorithm::naive_lookahead(board, 3, algorithm::ScoreFunction::FreeSpaceWithSortedness)},
+            AlgoEntry{name: "naive_lookahead6".to_string(), func: |board| algorithm::naive_lookahead(board, 6, algorithm::ScoreFunction::FreeSpace)},
+            AlgoEntry{name: "naive_lookaheadsorted6".to_string(), func: |board| algorithm::naive_lookahead(board, 6, algorithm::ScoreFunction::FreeSpaceWithSortedness)},
         ];
 
         for t in tests {
