@@ -1,5 +1,5 @@
 [package]
-name = "2064"
+name = "twentysixtyfour"
 version = "0.1.0"
 authors = ["Jeff McBride <mcbridejc@gmail.com>"]
 edition = "2018"
@@ -12,3 +12,8 @@ clap = "^2.33.0"
 easycurses = "^0.12.2"
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.8"
+criterion = "0.3.0"
+
+[[bench]]
+name = "benchmark"
+harness = false

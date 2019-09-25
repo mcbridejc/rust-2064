@@ -1,9 +1,9 @@
-mod tests;
-pub mod gameplay;
-pub mod simulate;
-mod interactive;
-mod algorithm;
 
+
+mod interactive;
+
+extern crate twentysixtyfour;
+use twentysixtyfour::{simulate, gameplay, algorithm};
 
 extern crate clap;
 use clap::{App, Arg};
@@ -13,6 +13,7 @@ use serde_yaml;
 
 use std::fs::write;
 use std::collections::BTreeMap;
+
 
 
 struct AlgoEntry {
