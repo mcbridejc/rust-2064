@@ -4,7 +4,7 @@ use easycurses::*;
 use easycurses::constants::acs;
 
 use super::*;
-use super::gameplay::{play, MoveDir};
+use super::gameplay::{GamePlayer, MoveDir, Board};
 
 const CELL_WIDTH:i32 = 10;
 const CELL_HEIGHT:i32 = 6;
@@ -59,7 +59,7 @@ fn draw_botline(easy: &mut EasyCurses) {
     easy.print_char(acs::lrcorner());
 }
 
-pub fn run() {
+pub fn run(algo: fn(&mut GamePlayer, &Board) -> MoveDir) {
     let mut board = gameplay::Board::init();
     let mut message = String::new();
     // Common startup
@@ -67,6 +67,8 @@ pub fn run() {
     easy.set_cursor_visibility(CursorVisibility::Invisible);
     easy.set_echo(false);
     easy.set_keypad_enabled(true);
+
+    let mut suggested_move = MoveDir::Down;
 
     loop {
         easy.clear();
@@ -105,14 +107,34 @@ pub fn run() {
 
         easy.refresh();
 
-        let mut try_play = |dir: MoveDir| { 
-            let result = play(&board, dir);
+        
+
+        easy.move_rc(0, 0);
+        easy.insert_line();
+        easy.insert_line();
+        easy.print(format!("Score: {}", &board.score));
+        easy.move_rc(1, 0);
+        let move_str = match &suggested_move {
+            MoveDir::Up => "Up",
+            MoveDir::Down => "Down",
+            MoveDir::Left => "Left",
+            MoveDir::Right => "Right",
+        };
+        easy.print(format!("Suggested: {}", move_str));
+
+
+        let mut try_play = |dir: MoveDir| {
+            let mut player = GamePlayer::default();
+            let result = player.play(&board, dir);
             match result {
-                Ok(new_board) => board = new_board,
+                Ok(new_board) => {
+                    board = new_board;
+                    suggested_move = algo(&mut player, &board);
+                },
                 Err(error) => message = error,
             }
         };
-
+        
         let input = easy.get_input();
         match input {
             Some(Input::KeyLeft) => try_play(MoveDir::Left),

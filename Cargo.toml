@@ -4,15 +4,19 @@ version = "0.1.0"
 authors = ["Jeff McBride <mcbridejc@gmail.com>"]
 edition = "2018"
 
+[profile.release]
+debug = true
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rand = "^0.7.2"
+rand = { version = "^0.7.2", features = ["small_rng"] }
 clap = "^2.33.0"
 easycurses = "^0.12.2"
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.8"
 criterion = "0.3.0"
+flame = "^0.2.2"
 
 [[bench]]
 name = "benchmark"
